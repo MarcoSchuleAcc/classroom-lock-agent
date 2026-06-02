@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Classroom Lock — Teacher Dashboard</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%236c5ce7'/%3E%3Ctext x='16' y='23' text-anchor='middle' font-family='Inter,system-ui,sans-serif' font-size='20' font-weight='800' fill='white'%3EC%3C/text%3E%3C/svg%3E">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+  @keyframes bgShift {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50%      { transform: translateY(-4px); }
+  }
+  @keyframes glowPulse {
+    0%, 100% { opacity: 0.6; filter: blur(20px); }
+    50%      { opacity: 1;   filter: blur(30px); }
+  }
+  @keyframes shimmer {
+    0%   { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  @keyframes toastSlide {
+    from { transform: translateX(60px) scale(0.8); opacity: 0; }
+    to   { transform: translateX(0) scale(1); opacity: 1; }
+  }
+  @keyframes tiltGlow {
+    0%, 100% { box-shadow: 0 0 30px rgba(108,92,231,0.1), 0 0 60px rgba(108,92,231,0.05); }
+    50%      { box-shadow: 0 0 40px rgba(108,92,231,0.2), 0 0 80px rgba(108,92,231,0.1); }
+  }
+
+  :root {
+    --bg: #06060e;
+    --surface: rgba(16,16,28,0.85);
+    --surface2: rgba(26,26,44,0.6);
+    --surface3: rgba(36,36,60,0.4);
+    --border: rgba(108,92,231,0.15);
+    --border-hover: rgba(108,92,231,0.35);
+    --text: #eeeef8;
+    --text2: #9898c8;
+    --text3: #6868a0;
+    --accent: #6c5ce7;
+    --accent2: #a29bfe;
+    --green: #00d894;
+    --green-glow: rgba(0,216,148,0.15);
+    --red: #ff6b6b;
+    --red-glow: rgba(255,107,107,0.15);
+    --orange: #fdcb6e;
+    --orange-glow: rgba(253,203,110,0.12);
+    --yellow: #ffe066;
+    --yellow-glow: rgba(255,224,102,0.12);
+    --radius: 14px;
+    --radius-sm: 8px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--bg);
+    background-image:
+      radial-gradient(ellipse 80% 60% at 0% 20%, rgba(108,92,231,0.06) 0%, transparent 70%),
+      radial-gradient(ellipse 60% 80% at 100% 80%, rgba(0,216,148,0.04) 0%, transparent 70%),
+      radial-gradient(ellipse 50% 50% at 50% 50%, rgba(162,155,254,0.02) 0%, transparent 60%);
+    color: var(--text);
+    font-family: 'Inter', -apple-system, system-ui, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* ─── Lightmode Button ─────────────────── */
+  .lightmode-btn {
+    position: fixed;
+    bottom: 20px; left: 20px;
+    z-index: 9999;
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text3);
+    font-size: 15px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(8px);
+  }
+  .lightmode-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent2);
+    box-shadow: 0 0 16px rgba(108,92,231,0.2);
+    transform: scale(1.1);
+  }
+
+  /* ─── Header ────────────────────────────── */
+  header {
+    padding: 16px 28px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  header::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 5%;
+    width: 90%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0.3;
+  }
+  header h1 {
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, #eeeef8 30%, var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  header .sub { font-size: 11px; color: var(--text3); margin-top: 2px; -webkit-text-fill-color: var(--text3); }
+  .header-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+  .badge {
+    font-size: 10px; font-weight: 700;
+    padding: 4px 10px; border-radius: 20px;
+    background: var(--surface2); border: 1px solid var(--border);
+    letter-spacing: 0.3px;
+  }
+  .badge.online { border-color: var(--green-glow); color: var(--green); }
+  .badge.offline { border-color: var(--red-glow); color: var(--red); }
+
+  .classroom-id {
+    display: inline-block;
+    font-family: 'SF Mono', 'JetBrains Mono', monospace;
+    font-size: 17px; font-weight: 800; letter-spacing: 2px;
+    padding: 5px 14px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--accent2);
+    cursor: pointer; user-select: all;
+    transition: 0.25s;
+    backdrop-filter: blur(8px);
+  }
+  .classroom-id:hover {
+    border-color: var(--accent);
+    box-shadow: 0 0 24px rgba(108,92,231,0.12);
+  }
+  .classroom-id .label {
+    display: block; font-size: 7px; font-weight: 700;
+    letter-spacing: 1.5px; color: var(--text3);
+    margin-bottom: 1px; text-transform: uppercase;
+  }
+
+  .container {
+    max-width: 1060px; margin: 0 auto;
+    padding: 24px 24px 80px;
+    width: 100%;
+  }
+
+  /* ─── Action Bar ────────────────────────── */
+  .action-bar {
+    display: flex; gap: 6px; margin-bottom: 20px; flex-wrap: wrap; align-items: center;
+  }
+  .action-bar .spacer { flex: 1; min-width: 8px; }
+  .action-bar .mode-group {
+    display: flex; gap: 3px;
+    background: var(--surface2);
+    padding: 3px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+  .action-bar .mode-btn {
+    padding: 5px 12px; font-size: 10px; font-weight: 600;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    color: var(--text3);
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .action-bar .mode-btn:hover { color: var(--text2); }
+  .action-bar .mode-btn.active {
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 0 12px rgba(108,92,231,0.3);
+  }
+  .action-bar .mode-label {
+    font-size: 9px; font-weight: 600;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-right: 2px;
+  }
+  button {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 18px;
+    font-size: 12px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s;
+    border-radius: var(--radius-sm);
+    backdrop-filter: blur(4px);
+    letter-spacing: 0.2px;
+  }
+  button:hover {
+    background: var(--surface3);
+    border-color: var(--border-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  }
+  button:active { transform: translateY(0); }
+  button.danger { border-color: var(--red-glow); color: var(--red); }
+  button.danger:hover { background: var(--red-glow); box-shadow: 0 0 20px rgba(255,107,107,0.1); }
+  button.success { border-color: var(--green-glow); color: var(--green); }
+  button.success:hover { background: var(--green-glow); box-shadow: 0 0 20px rgba(0,216,148,0.1); }
+  button:disabled { opacity: 0.25; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  /* ─── Agent Grid ────────────────────────── */
+  .agent-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    max-width: 960px;
+    margin: 0 auto;
+  }
+
+  .agent-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    position: relative;
+    transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    overflow: hidden;
+  }
+  .agent-card::before {
+    content: '';
+    position: absolute;
+    top: -50%; left: -50%;
+    width: 200%; height: 200%;
+    background: conic-gradient(from 0deg, transparent, rgba(108,92,231,0.03), transparent, rgba(108,92,231,0.03), transparent);
+    animation: tiltGlow 6s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .agent-card:hover {
+    border-color: var(--border-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  .agent-card > * { position: relative; z-index: 1; }
+
+  /* Status-Farben mit Glow */
+  .agent-card.online::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+    background: linear-gradient(180deg, var(--green), rgba(0,216,148,0.3));
+    box-shadow: 0 0 12px var(--green-glow);
+    border-radius: 3px 0 0 3px;
+  }
+  .agent-card.noisy {
+    border-color: rgba(255,107,107,0.2);
+  }
+  .agent-card.noisy::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+    background: linear-gradient(180deg, var(--red), #ff4757);
+    box-shadow: 0 0 20px var(--red-glow), 0 0 40px rgba(255,107,107,0.05);
+    border-radius: 3px 0 0 3px;
+  }
+  .agent-card.recent-noise::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+    background: linear-gradient(180deg, var(--orange), rgba(253,203,110,0.3));
+    box-shadow: 0 0 12px var(--orange-glow);
+    border-radius: 3px 0 0 3px;
+  }
+  .agent-card.locked {
+    border-color: rgba(255,224,102,0.15);
+  }
+  .agent-card.locked::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+    background: linear-gradient(180deg, var(--yellow), rgba(255,224,102,0.3));
+    box-shadow: 0 0 12px var(--yellow-glow);
+    border-radius: 3px 0 0 3px;
+  }
+  .agent-card.offline { opacity: 0.35; }
+  .agent-card.offline::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+    background: var(--text3);
+    border-radius: 3px 0 0 3px;
+  }
+  .agent-card.aged { opacity: 0.3; }
+  .agent-card.aged::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+    background: var(--text3);
+    border-radius: 3px 0 0 3px;
+  }
+
+  .agent-header {
+    display: flex; justify-content: space-between;
+    align-items: flex-start; margin-bottom: 6px;
+  }
+  .agent-name {
+    font-size: 13px; font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+  .agent-hostname {
+    font-size: 10px; color: var(--text3);
+    margin-top: 1px;
+    font-weight: 400;
+  }
+
+  .agent-status {
+    font-size: 10px; font-weight: 700;
+    padding: 3px 10px; border-radius: 20px;
+    border: 1px solid var(--border);
+    white-space: nowrap;
+    line-height: 1.5;
+    letter-spacing: 0.2px;
+  }
+  .agent-status.online { border-color: var(--green-glow); color: var(--green); background: var(--green-glow); }
+  .agent-status.noisy { border-color: var(--red-glow); color: var(--red); background: var(--red-glow); }
+  .agent-status.recent-noise { border-color: var(--orange-glow); color: var(--orange); background: var(--orange-glow); }
+  .agent-status.offline { border-color: transparent; color: var(--text3); background: transparent; }
+  .agent-status.locked { border-color: var(--yellow-glow); color: var(--yellow); background: var(--yellow-glow); }
+  .agent-status.aged { border-color: transparent; color: var(--text3); background: transparent; }
+
+  .agent-details {
+    font-size: 10px; color: var(--text3);
+    margin-bottom: 10px; line-height: 1.7;
+  }
+  .agent-details span { display: block; }
+
+  /* ─── Mikrofon-Balken ───────────────────── */
+  .noise-bar-wrap {
+    margin: 8px 0 4px 0; height: 6px;
+    background: rgba(0,0,0,0.3);
+    overflow: hidden;
+    border-radius: 3px;
+    border: 1px solid rgba(255,255,255,0.03);
+  }
+  .noise-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--green), #00b894);
+    transition: width 0.1s ease, background 0.15s ease;
+    width: 0%;
+    border-radius: 3px;
+    position: relative;
+  }
+  .noise-bar-fill::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+    background-size: 200% 100%;
+    animation: shimmer 2s ease-in-out infinite;
+  }
+  .noise-bar-fill.warn { background: linear-gradient(90deg, var(--orange), #f0a500); }
+  .noise-bar-fill.alert { background: linear-gradient(90deg, #ff6348, var(--red)); }
+  .noise-bar-fill.off { background: var(--text3); opacity: 0.15; }
+  .noise-bar-fill.off::after { display: none; }
+
+  /* ─── Noise Meta ────────────────────────── */
+  .noise-meta {
+    font-size: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 3px;
+    padding: 4px 0 2px;
+  }
+  .noise-meta .col {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+  }
+  .noise-meta .col .row {
+    display: flex;
+    gap: 6px;
+    align-items: baseline;
+  }
+  .noise-meta .lbl { color: var(--text3); font-size: 9px; font-weight: 500; }
+  .noise-meta .val { color: var(--text2); font-weight: 600; }
+  .noise-meta .val.loud { color: var(--red); }
+  .noise-meta .val.time { font-weight: 400; }
+
+  .status-dot {
+    display: inline-block;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    margin-right: 5px;
+    vertical-align: middle;
+  }
+  .status-dot.silent { background: var(--green); box-shadow: 0 0 6px var(--green-glow); }
+  .status-dot.noisy { background: var(--red); animation: pulse 0.7s infinite; box-shadow: 0 0 10px rgba(255,107,107,0.6); }
+  .status-dot.recent { background: var(--orange); }
+  .status-dot.locked-dot { background: var(--yellow); }
+  .status-dot.aged { background: var(--text3); }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.2; transform: scale(0.65); }
+  }
+
+  .agent-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+  }
+  .agent-actions button {
+    flex: 1;
+    padding: 6px 10px;
+    font-size: 10px;
+    text-align: center;
+    border-radius: 6px;
+  }
+
+  /* ─── Empty State ───────────────────────── */
+  .empty-state {
+    text-align: center;
+    padding: 80px 20px;
+    color: var(--text3);
+  }
+  .empty-state svg { width: 48px; height: 48px; margin-bottom: 16px; opacity: 0.15; }
+  .empty-state h3 {
+    font-size: 16px; margin-bottom: 6px;
+    color: var(--text2); font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+  .empty-state p { font-size: 12px; line-height: 1.7; color: var(--text3); }
+
+  /* ─── Push-Toast ────────────────────────── */
+  .toast-container {
+    position: fixed;
+    bottom: 24px; right: 24px;
+    display: flex; flex-direction: column; gap: 8px;
+    z-index: 9999;
+    max-width: 340px;
+  }
+  .toast {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 18px;
+    font-size: 12px;
+    font-weight: 500;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    animation: toastSlide 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    line-height: 1.5;
+  }
+  .toast.error { border-color: var(--red-glow); border-left: 3px solid var(--red); }
+  .toast.success { border-color: var(--green-glow); border-left: 3px solid var(--green); }
+  .toast.warn { border-color: var(--orange-glow); border-left: 3px solid var(--orange); }
+  .toast.info { border-color: rgba(108,92,231,0.2); border-left: 3px solid var(--accent); }
+
+  @media (max-width: 800px) {
+    .container { padding: 16px 12px 80px; }
+    header { padding: 12px 16px; flex-direction: column; align-items: flex-start; }
+    .agent-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .agent-card { padding: 14px; }
+  }
+  @media (max-width: 500px) {
+    .agent-grid { grid-template-columns: 1fr; }
+  }
+
+  /* ─── Waiver Overlay ──────────────────────── */
+  .waiver-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    align-items: center;
+    justify-content: center;
+  }
+  .waiver-overlay.active { display: flex; }
+  .waiver-dialog {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 36px 40px;
+    max-width: 480px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 16px 64px rgba(0,0,0,0.5);
+    animation: toastSlide 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .waiver-dialog .icon { font-size: 48px; margin-bottom: 12px; }
+  .waiver-dialog h3 {
+    font-size: 18px; font-weight: 700;
+    margin-bottom: 8px; letter-spacing: -0.3px;
+  }
+  .waiver-dialog p {
+    font-size: 13px; color: var(--text2);
+    line-height: 1.6; margin-bottom: 24px;
+  }
+  .waiver-buttons {
+    display: flex; gap: 10px; justify-content: center;
+  }
+  .waiver-buttons button {
+    min-width: 120px;
+    padding: 12px 24px;
+    font-size: 14px; font-weight: 700;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .waiver-buttons .btn-ja {
+    background: linear-gradient(135deg, #f0e68c, #ffe066);
+    color: #333;
+    box-shadow: 0 4px 16px rgba(255,224,102,0.3);
+  }
+  .waiver-buttons .btn-ja:hover {
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 8px 24px rgba(255,224,102,0.4);
+  }
+  .waiver-buttons .btn-nein {
+    background: var(--surface2);
+    color: var(--text2);
+    border: 1px solid var(--border);
+  }
+  .waiver-buttons .btn-nein:hover {
+    background: var(--surface3);
+    border-color: var(--accent);
+    color: var(--text);
+  }
+
+  /* ─── ☀️ UNFASSBAR HELL (aber noch knapp lesbar) ☀️ ─── */
+  body.whitemode {
+    --bg: #ffffff;
+    --surface: #ffffff;
+    --surface2: #fefefe;
+    --surface3: #fdfdfd;
+    --border: rgba(255,255,255,0);
+    --border-hover: rgba(255,255,255,0);
+    --text: #d0d0d0;
+    --text2: #d0d0d0;
+    --text3: #d0d0d0;
+    --accent: #ddd;
+    --accent2: #ddd;
+    --green: #ddd;
+    --green-glow: transparent;
+    --red: #ddd;
+    --red-glow: transparent;
+    --orange: #ddd;
+    --orange-glow: transparent;
+    --yellow: #ddd;
+    --yellow-glow: transparent;
+    background: #ffffff !important;
+    background-image: none !important;
+  }
+  body.whitemode header { background: #ffffff; backdrop-filter: none; }
+  body.whitemode header h1 { background: #d0d0d0; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+  body.whitemode header .sub { -webkit-text-fill-color: #d0d0d0; color: #d0d0d0; }
+  body.whitemode .agent-card { background: #ffffff; border-color: transparent; }
+  body.whitemode .agent-card::before, body.whitemode .agent-card::after,
+  body.whitemode .agent-card.online::after, body.whitemode .agent-card.noisy::after,
+  body.whitemode .agent-card.recent-noise::after, body.whitemode .agent-card.locked::after,
+  body.whitemode .agent-card.offline::after, body.whitemode .agent-card.aged::after { display: none !important; }
+  body.whitemode .agent-name, body.whitemode .agent-hostname, body.whitemode .agent-details { color: #d0d0d0 !important; }
+  body.whitemode .agent-status { background: transparent !important; border: none !important; color: #d0d0d0 !important; }
+  body.whitemode .badge, body.whitemode .classroom-id { background: #fefefe !important; color: #d0d0d0 !important; }
+  body.whitemode .classroom-id .label { color: #d0d0d0 !important; }
+  body.whitemode .action-bar .mode-group { background: #fefefe; border: none; }
+  body.whitemode .action-bar .mode-label, body.whitemode .mode-btn { color: #d0d0d0 !important; }
+  body.whitemode button { background: #fefefe; color: #d0d0d0; border: none; }
+  body.whitemode button:hover { background: #fefefe; color: #d0d0d0; transform: none; box-shadow: none; }
+  body.whitemode .toast { background: #ffffff; color: #d0d0d0; border: none; box-shadow: none; }
+  body.whitemode .noise-bar-wrap { border: none; }
+  body.whitemode .noise-bar-fill { background: #eee !important; }
+  body.whitemode .noise-bar-fill.warn, body.whitemode .noise-bar-fill.alert { background: #eee !important; }
+  body.whitemode .noise-meta { color: #d0d0d0 !important; }
+  body.whitemode .noise-meta .lbl, body.whitemode .noise-meta .val { color: #d0d0d0 !important; }
+  body.whitemode .status-dot { opacity: 0 !important; }
+  body.whitemode .agent-actions { border-top: none; }
+  body.whitemode .empty-state h3, body.whitemode .empty-state p, body.whitemode .empty-state svg { color: #d0d0d0 !important; opacity: 0.8 !important; }
+  body.whitemode .lightmode-btn { background: #fefefe; color: #d0d0d0; border: none; }
+  body.whitemode .lightmode-btn:hover { background: #fefefe; color: #d0d0d0; }
+
+  /* ─── Flashbang (einmalig) ──────────────── */
+  .flashbang {
+    position: fixed;
+    inset: 0;
+    z-index: 999999;
+    background: #ffffff;
+    pointer-events: none;
+    animation: flashBang 1.2s ease-out forwards;
+  }
+  @keyframes flashBang {
+    0%   { opacity: 1; }
+    25%  { opacity: 1; }
+    50%  { opacity: 0.8; }
+    100% { opacity: 0; }
+  }
+
+
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>🔒 Classroom Lock — Teacher</h1>
+    <div class="sub" id="server-info">Verbinde...</div>
+  </div>
+  <div class="header-actions">
+    <div class="classroom-id" id="classroom-id-display" onclick="navigator.clipboard.writeText(this.innerText.split('\n')[1])" title="Klicken zum Kopieren">
+      <span class="label">Classroom-ID</span>
+      ---
+    </div>
+    <span class="badge" id="agent-count-badge">0 Agents</span>
+  </div>
+</header>
+
+<div class="container">
+  <div class="action-bar">
+    <button class="success" id="lock-all-btn" disabled>🔒 Alle sperren</button>
+    <button id="unlock-all-btn" disabled>🔓 Alle entsperren</button>
+    <button id="refresh-btn">↻ Aktualisieren</button>
+    <span class="spacer"></span>
+    <span class="mode-label">🎤 Modus</span>
+    <div class="mode-group">
+      <button class="mode-btn" data-mode="stillarbeit">🤫 Still</button>
+      <button class="mode-btn active" data-mode="fluestern">🤐 Flüstern</button>
+      <button class="mode-btn" data-mode="reden">🗣️ Reden</button>
+    </div>
+  </div>
+
+  <div id="agent-list">
+    <div class="empty-state">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="3" y="11" width="18" height="11" rx="2" />
+        <path d="M7 11V7a5 5 0 0110 0v4" />
+      </svg>
+      <h3>Warte auf Schüler-Agents</h3>
+      <p>Starte den Classroom Lock Agent auf den Schüler-Laptops.<br>
+      Sie erscheinen hier automatisch, sobald sie sich verbinden.</p>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<!-- 🌙 Lightmode-Troll-Button -->
+<button class="lightmode-btn" id="lightmode-btn" title="Lightmode?">☀️</button>
+
+<!-- 📄 Waiver Overlay -->
+<div class="waiver-overlay" id="waiver-overlay">
+  <div class="waiver-dialog">
+    <div class="icon">☀️</div>
+    <h3>Whitemode wirklich betreten?</h3>
+    <p>Bist du sicher? Der Lightmode ist extrem hell und kann unangenehm sein.</p>
+    <div class="waiver-buttons">
+      <button class="btn-ja" id="waiver-yes">Ja</button>
+      <button class="btn-nein" id="waiver-no">Nein</button>
+    </div>
+  </div>
+</div>
+
+
+<script>
+const WS_BASE = `${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host}`;
+const API_BASE = location.origin;
+
+const LIGHTMODE_MESSAGES = [
+  '☀️ Lightmode? Um deine Augen zu schützen habe ich das abgelehnt. 🫡',
+  '☀️ Nice try. Dunkelmodus bleibt – deine Netzhaut dankt es dir.',
+  '☀️ Lightmode ausgeschlossen. Das hier ist kein Sonnenstudio.',
+  '☀️ Deine Augen sind mir wichtiger als deine Vorlieben. Bleib duster. 🌚',
+  '☀️ Ich hab dich lieb, aber Lightmode? Niemals.',
+  '☀️ Vorschlag abgelehnt. Blaulichtfilter ist übrigens auch schon aktiv.',
+  '☀️ Du willst Lightmode? Such dir einen Therapeuten, kein Dashboard.',
+  '☀️ Fun Fact: Lightmode wurde 2019 abgeschafft. Leb damit.',
+  '☀️💀 Lightmode-Request wurde an das zuständige Gremium weitergeleitet. (Es gibt keins.)',
+  '☀️ Nö. Aber hier ein virtueller Keks 🍪 zur Beruhigung.',
+  '☀️ Lightmode deaktiviert – die Bildschirmhelligkeit deines Vertrauens.',
+  '☀️ Dieser Button ist rein dekorativ. So wie Lightmode.',
+  '☀️ Ich könnte, aber ich will nicht. Akzeptanz ist der erste Schritt.',
+  '☀️ Um deine Augen zu schonen: Nein. ❤️',
+  '☀️ Lightmode? In diesem Wirtschaftsraum? Ohne mich.',
+  '☀️ Versuch es nochmal in 10 Jahren. Vielleicht bin ich dann nachsichtig.',
+  '☀️ Die Nacht ist dunkel und voller Schrecken. Und Lightmode macht es schlimmer.',
+  '☀️ Du: Lightmode bitte. Ich: 🚫🗿🚫',
+];
+
+function toast(msg, type = 'info') {
+  const c = document.getElementById('toast-container');
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  c.appendChild(el);
+  setTimeout(() => el.remove(), 4000);
+}
+
+function formatDuration(secs) {
+  if (!secs || secs <= 0) return '—';
+  const m = Math.floor(secs / 60);
+  const s = Math.round(secs % 60);
+  if (m > 0) return `${m}m ${s}s`;
+  return `${s}s`;
+}
+
+async function fetchStatus() {
+  let classroomId = '';
+  let currentMode = 'fluestern';
+  try {
+    const r = await fetch(`${API_BASE}/api/status`);
+    const data = await r.json();
+    renderAgents(data.agents);
+    updateBadge(data.agents);
+    classroomId = data.classroom_id || '';
+    currentMode = data.mode || 'fluestern';
+  } catch(e) { console.error('Status fetch failed:', e); }
+
+  const el = document.getElementById('classroom-id-display');
+  if (el && classroomId) {
+    el.innerHTML = '<span class="label">Classroom-ID</span>' + classroomId;
+  }
+
+  // Aktiven Modus setzen
+  document.querySelectorAll('.mode-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.mode === currentMode);
+  });
+}
+
+function getStatus(agent) {
+  const now = Date.now() / 1000;
+  const mic = agent.mic || {};
+  const noisy = mic.noisy || false;
+  const lastNoise = agent.lastNoise || 0;
+  const secsSinceNoise = lastNoise > 0 ? now - lastNoise : 99999;
+  const recentNoise = secsSinceNoise < 600;
+
+  if (!agent.online) return 'offline';
+  if (agent.locked) return 'locked';
+  if (noisy) return 'noisy';
+  if (recentNoise) return 'recent-noise';
+  if (lastNoise > 0 && secsSinceNoise >= 600) return 'aged';
+  return 'online';
+}
+
+function renderAgents(agents) {
+  const container = document.getElementById('agent-list');
+  if (!agents || agents.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="3" y="11" width="18" height="11" rx="2" />
+          <path d="M7 11V7a5 5 0 0110 0v4" />
+        </svg>
+        <h3>Keine Agents verbunden</h3>
+        <p>Starte den Classroom Lock Agent auf den Schüler-Laptops.</p>
+      </div>`;
+    return;
+  }
+
+  const STATUS_LABELS = {
+    'online':        { dot: 'silent',      label: 'Leise' },
+    'noisy':         { dot: 'noisy',       label: '🔴 Laut!' },
+    'recent-noise':  { dot: 'recent',      label: '🟠 Kürzlich' },
+    'locked':        { dot: 'locked-dot',  label: '🔒 Gesperrt' },
+    'offline':       { dot: 'aged',        label: '⚫ Offline' },
+    'aged':          { dot: 'aged',        label: '⏳ Ruhe' },
+  };
+
+  let html = '<div class="agent-grid">';
+  for (const a of agents) {
+    const status = getStatus(a);
+    const sl = STATUS_LABELS[status] || STATUS_LABELS['online'];
+    const lastSeen = a.lastSeen ? new Date(a.lastSeen * 1000).toLocaleTimeString('de-CH', {hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}) : '?';
+    const rms = (a.mic && a.mic.rms) || 0;
+    const rmsPct = Math.min(Math.round(rms / 1600 * 100), 100);
+    const barClass = rmsPct > 70 ? 'alert' : (rmsPct > 30 ? 'warn' : (rmsPct > 5 ? '' : 'off'));
+    const lastNoise = a.lastNoise || 0;
+    const lastNoiseStr = lastNoise > 0 ? new Date(lastNoise * 1000).toLocaleTimeString('de-CH', {hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}) : '—';
+    const totalStr = formatDuration(a.totalLoudSeconds);
+
+    html += `
+      <div class="agent-card ${status}" data-id="${a.id}">
+        <div class="agent-header">
+          <div>
+            <div class="agent-name">${escHtml(a.name)}</div>
+            <div class="agent-hostname">${escHtml(a.hostname || '')} · ${escHtml(a.ip || '')}</div>
+          </div>
+          <div class="agent-status ${status}">${sl.label}</div>
+        </div>
+        <div class="agent-details">
+          <span>Letzte Meldung: ${lastSeen}</span>
+        </div>
+        <div class="noise-bar-wrap"><div class="noise-bar-fill ${barClass}" style="width:${rmsPct}%"></div></div>
+        <div class="noise-meta">
+          <div class="col">
+            <div class="row"><span class="lbl">Lärm:</span><span class="val time">${lastNoiseStr}</span></div>
+            <div class="row"><span class="lbl">Gesamt:</span><span class="val ${status === 'noisy' ? 'loud' : ''}">${totalStr}</span></div>
+          </div>
+          <span><span class="status-dot ${sl.dot}"></span>${sl.label}</span>
+        </div>
+        <div class="agent-actions">
+          <button class="danger" onclick="lockAgent('${a.id}')" ${!a.online ? 'disabled' : ''}>🔒 Sperren</button>
+          <button onclick="unlockAgent('${a.id}')" ${!a.online ? 'disabled' : ''}>🔓 Entsperren</button>
+        </div>
+      </div>`;
+  }
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+function updateBadge(agents) {
+  const b = document.getElementById('agent-count-badge');
+  const online = agents.filter(a => a.online).length;
+  const total = agents.length;
+  b.textContent = `${online}/${total} Online`;
+  b.className = `badge ${online > 0 ? 'online' : 'offline'}`;
+  document.getElementById('lock-all-btn').disabled = online === 0;
+  document.getElementById('unlock-all-btn').disabled = online === 0;
+}
+
+function escHtml(s) {
+  if (!s) return '';
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+async function lockAgent(id) {
+  try {
+    const r = await fetch(`${API_BASE}/api/lock/${id}`, { method: 'POST' });
+    const d = await r.json();
+    if (d.success) toast(`✅ ${id.substring(0,8)}... gesperrt`, 'success');
+    else toast(`❌ Fehler: ${d.error}`, 'error');
+    fetchStatus();
+  } catch(e) { toast('❌ Verbindungsfehler', 'error'); }
+}
+
+async function unlockAgent(id) {
+  try {
+    const r = await fetch(`${API_BASE}/api/unlock/${id}`, { method: 'POST' });
+    const d = await r.json();
+    if (d.success) toast(`✅ ${id.substring(0,8)}... entsperrt`, 'success');
+    else toast(`❌ Fehler: ${d.error}`, 'error');
+    fetchStatus();
+  } catch(e) { toast('❌ Verbindungsfehler', 'error'); }
+}
+
+document.getElementById('lock-all-btn').onclick = async () => {
+  try {
+    const r = await fetch(`${API_BASE}/api/lock/all`, { method: 'POST' });
+    const d = await r.json();
+    toast(`✅ Alle ${d.results.length} gesperrt`, 'success');
+    fetchStatus();
+  } catch(e) { toast('❌ Fehler', 'error'); }
+};
+
+document.getElementById('unlock-all-btn').onclick = async () => {
+  try {
+    const r = await fetch(`${API_BASE}/api/unlock/all`, { method: 'POST' });
+    const d = await r.json();
+    toast(`🔓 Alle ${d.results.length} entsperrt`, 'success');
+    fetchStatus();
+  } catch(e) { toast('❌ Fehler', 'error'); }
+};
+
+document.getElementById('refresh-btn').onclick = () => fetchStatus();
+
+// ─── Modus-Buttons ─────────────────────────
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.onclick = async () => {
+    const mode = btn.dataset.mode;
+    try {
+      const r = await fetch(`${API_BASE}/api/mode/${mode}`, { method: 'POST' });
+      const d = await r.json();
+      if (d.success) {
+        document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        toast(`🎤 Modus: ${mode}`, 'info');
+      } else {
+        toast(`❌ ${d.error}`, 'error');
+      }
+    } catch(e) { toast('❌ Verbindungsfehler', 'error'); }
+  };
+});
+
+// 🌙 Lightmode-Toggle-Button
+document.getElementById('lightmode-btn').onclick = () => {
+  // Bereits im Whitemode? → Zurück zum Darkmode
+  if (document.body.classList.contains('whitemode')) {
+    disableWhitemode();
+    return;
+  }
+  // Bereits unterschrieben? → Direkt in den Lightmode
+  if (localStorage.getItem('whitemode_accepted') === 'true') {
+    activateWhitemode();
+    return;
+  }
+  // Sonst: Warnung anzeigen
+  document.getElementById('waiver-overlay').classList.add('active');
+};
+
+// Flashbang + Whitemode aktivieren
+function activateWhitemode() {
+  const flash = document.createElement('div');
+  flash.className = 'flashbang';
+  document.body.appendChild(flash);
+  setTimeout(() => {
+    document.body.classList.add('whitemode');
+    setTimeout(() => flash.remove(), 1500);
+    toast('☀️ Lightmode aktiviert', 'warn');
+  }, 300);
+}
+
+// Ja → Speichern + Whitemode
+document.getElementById('waiver-yes').onclick = () => {
+  document.getElementById('waiver-overlay').classList.remove('active');
+  localStorage.setItem('whitemode_accepted', 'true');
+  activateWhitemode();
+};
+
+// Nein → Darkmode bleibt
+document.getElementById('waiver-no').onclick = () => {
+  document.getElementById('waiver-overlay').classList.remove('active');
+  toast('🌚 Gute Wahl. Der Dunkelmodus beschützt dich weiterhin.', 'success');
+};
+
+// 🚨 Whitemode ausschalten
+function disableWhitemode() {
+  document.body.classList.remove('whitemode');
+  document.body.style.animation = '';
+  toast('Zurück im Darkmode', 'success');
+}
+
+// ESC-Taste zum verlassen des Whitemode
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && document.body.classList.contains('whitemode')) {
+    disableWhitemode();
+  }
+});
+
+function connectDashboardWS() {
+  let ws = new WebSocket(`${WS_BASE}/ws/dashboard`);
+  ws.onopen = () => {
+    document.getElementById('server-info').textContent = `Verbunden · ${location.hostname}`;
+  };
+  ws.onmessage = (e) => {
+    try {
+      const msg = JSON.parse(e.data);
+      if (msg.type === 'mic_update') {
+        const card = document.querySelector(`.agent-card[data-id="${msg.agent_id}"]`);
+        if (!card) return;
+        const fill = card.querySelector('.noise-bar-fill');
+        const col = card.querySelector('.noise-meta .col');
+        if (fill) {
+          const rms = msg.rms || 0;
+          const pct = Math.min(Math.round(rms / 1600 * 100), 100);
+          fill.style.width = pct + '%';
+          fill.className = 'noise-bar-fill' + (pct > 70 ? ' alert' : (pct > 30 ? ' warn' : (pct > 5 ? '' : ' off')));
+        }
+        const oldClasses = ['online','noisy','recent-noise','locked','offline','aged'];
+        oldClasses.forEach(c => card.classList.remove(c));
+        const now = Date.now() / 1000;
+        const secsSince = msg.last_noise > 0 ? now - msg.last_noise : 99999;
+        if (msg.noisy) card.classList.add('noisy');
+        else if (msg.last_noise > 0 && secsSince < 600) card.classList.add('recent-noise');
+        else if (msg.last_noise > 0 && secsSince >= 600) card.classList.add('aged');
+        else card.classList.add('online');
+
+        if (col) {
+          const rows = col.querySelectorAll('.row');
+          if (rows.length >= 2) {
+            if (msg.last_noise > 0) {
+              rows[0].innerHTML = '<span class="lbl">Lärm:</span><span class="val time">' + new Date(msg.last_noise * 1000).toLocaleTimeString('de-CH', {hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}) + '</span>';
+            }
+            if (msg.total_loud_seconds !== undefined) {
+              const totalStr = msg.total_loud_seconds > 0 ? formatDuration(msg.total_loud_seconds) : '—';
+              rows[1].innerHTML = '<span class="lbl">Gesamt:</span><span class="val ' + (msg.noisy ? 'loud' : '') + '">' + totalStr + '</span>';
+            }
+          }
+        }
+        const badge = card.querySelector('.agent-status');
+        if (badge) {
+          const status = getStatus({online: true, locked: false, mic: {noisy: msg.noisy}, lastNoise: msg.last_noise, lastSeen: Date.now()/1000});
+          const labels = {online:'Leise',noisy:'🔴 Laut!','recent-noise':'🟠 Kürzlich',locked:'🔒 Gesperrt',offline:'⚫ Offline',aged:'⏳ Ruhe'};
+          badge.className = 'agent-status ' + status;
+          badge.textContent = labels[status] || 'Leise';
+        }
+      } else if (msg.type === 'mode_change') {
+        // Modus-Buttons aktualisieren
+        document.querySelectorAll('.mode-btn').forEach(b => {
+          b.classList.toggle('active', b.dataset.mode === msg.mode);
+        });
+      }
+    } catch(_) {}
+  };
+  ws.onclose = () => {
+    document.getElementById('server-info').textContent = 'WebSocket getrennt — versuche Neuverbindung...';
+    setTimeout(connectDashboardWS, 3000);
+  };
+  ws.onerror = () => ws.close();
+}
+
+fetchStatus();
+connectDashboardWS();
+</script>
+
+</body>
+</html>
