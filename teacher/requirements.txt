@@ -1,0 +1,3 @@
+# Classroom Lock Agent - Teacher
+websockets>=12.0
+numpy>=1.26.0

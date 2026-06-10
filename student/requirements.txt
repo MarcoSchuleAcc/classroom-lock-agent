@@ -1,0 +1,12 @@
+# Classroom Lock Agent - Student
+# Core
+websockets>=12.0
+numpy>=1.26.0
+
+# Plattform-spezifisch:
+# Windows: pip install sounddevice
+# Linux:   sudo apt-get install alsa-utils  (arecord, kein pip-Paket nötig)
+# macOS:   pip install sounddevice
+
+# Optional: mDNS-Discovery
+# zeroconf>=0.132.0
