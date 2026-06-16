@@ -24,7 +24,7 @@ except ImportError:
 # ──────────────────────────────────────────────
 CHUNK       = 512     # kleinerer Block = schnellere Reaktion
 RATE        = 44100
-SILENCE_THR = 800    # Deutlich weniger sensibel (vorher 800)
+SILENCE_THR = 5000    # Deutlich weniger sensibel (vorher 800)
 BAR_WIDTH   = 45
 DECAY       = 0.75    # Balken fällt langsam zurück (0.0=sofort, 0.95=sehr langsam)
 

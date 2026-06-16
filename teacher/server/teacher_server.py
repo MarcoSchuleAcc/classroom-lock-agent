@@ -116,8 +116,8 @@ async def get_status():
 # ─── Mode (Still / Flüstern / Reden) ────────────────
 CURRENT_MODE = "fluestern"
 MODES = {
-    "stillarbeit": 5000,    # Sehr sensibel für absolute Ruhe (mit Hysterese stabil)
-    "fluestern": 800,      # Flüstern wird erfasst (mit Hysterese kein Fehlalarm)
+    "stillarbeit": 2500,    # Sehr sensibel für absolute Ruhe (mit Hysterese stabil)
+    "fluestern": 8000,      # Flüstern wird erfasst (mit Hysterese kein Fehlalarm)
     "reden": 99999,         # Niemals laut – Teacher schaltet noisy=False
 }
 

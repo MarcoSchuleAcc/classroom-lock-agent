@@ -29,7 +29,7 @@ SYSTEM = pf.system()
 # ──────────────────────────────────────────────
 CHUNK_DURATION = 0.2     # Sekunden pro Sample-Block
 SAMPLE_RATE    = 16000   # niedriger = weniger CPU
-SILENCE_THR    = 0.04    # Weniger sensibel (vorher 0.04)
+SILENCE_THR    = 0.08    # Weniger sensibel (vorher 0.04)
 
 
 # ──────────────────────────────────────────────
