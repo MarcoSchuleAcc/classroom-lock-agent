@@ -157,8 +157,7 @@ classroom-lock-agent/
 │   ├── requirements.txt
 │   ├── teacher_config.json       # Config (Classroom-ID, Port)
 │   ├── dashboard/
-│   │   ├── index.html            # Web-Dashboard
-│   │   └── verzichtserklaerung.html
+│   │   └── index.html            # Web-Dashboard
 │   └── server/
 │       └── teacher_server.py     # Server (FastAPI + WebSocket)
 │
