@@ -131,15 +131,23 @@ _backend_available = False
 
 
 def init() -> bool:
-    """Einmalige Initialisierung. Gibt True bei Erfolg zurück."""
+    """Initialisiert das Backend. Prüft primär auf Existenz des Binaries."""
     global _backend_available
 
     if SYSTEM == "Linux":
-        if _arecord_available():
-            _backend_available = True
-            return True
-        print("[nix_monitor] arecord nicht verfügbar")
-        return False
+        # Prüfung: Existiert arecord im System-Pfad?
+        try:
+            # which liefert Exit-Code 0, wenn gefunden
+            check = subprocess.run(["which", "arecord"], capture_output=True, text=True)
+            if check.returncode == 0:
+                _backend_available = True
+                return True
+            else:
+                print("[nix_monitor] Fehler: 'arecord' konnte nicht gefunden werden.")
+                return False
+        except Exception as e:
+            print(f"[nix_monitor] Kritischer Fehler bei init: {e}")
+            return False
 
     if SYSTEM == "Darwin":
         if _sd_available:
